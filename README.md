@@ -17,9 +17,9 @@ We was free to choose any subject, we take climate changes because it's one of t
 - Realize the situation and raise awareness
 
 ## Datasets
-- [Daily Temperature of Major Cities](https://www.kaggle.com/datasets/sudalairajkumar/daily-temperature-of-major-cities)\
-- [Global Sea Level 1993 - 2021](https://www.kaggle.com/datasets/kkhandekar/global-sea-level-1993-2021)\
-- [Daily atmosphere carbon dioxide concentration](https://www.kaggle.com/datasets/arunavsutar/daily-atmosphere-carbon-dioxide-concentration)\
+- [Daily Temperature of Major Cities](https://www.kaggle.com/datasets/sudalairajkumar/daily-temperature-of-major-cities)
+- [Global Sea Level 1993 - 2021](https://www.kaggle.com/datasets/kkhandekar/global-sea-level-1993-2021)
+- [Daily atmosphere carbon dioxide concentration](https://www.kaggle.com/datasets/arunavsutar/daily-atmosphere-carbon-dioxide-concentration)
 
 Attention -> For the "Daily Temperature of Major Cities" dataset there is a problem with the API of Kaggle so we need to download it in the same folder of the file.  
 
@@ -39,4 +39,4 @@ We have made a presentation so there is the pdf of it in the main.
 
 [Giulio Garnier](https://github.com/G1ul1o)\
 [Enzo Rivière](https://github.com/Enzo-Riviere)\
-[Marc ROUGAGNOU](https://github.com/Marc-Rougagnou)\
+[Marc ROUGAGNOU](https://github.com/Marc-Rougagnou)
