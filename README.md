@@ -1,5 +1,16 @@
 # Machine_Learning_Project : Climate Change Trends Analysis
+## Module : Machine Learning
 
-This project have been made by Giulio Garnier, Enzo Rivière ans Marc Rougagnou during our class of Machine Learning in the S8 (M1) at EFREI.
-We have to find some datasets that we concact to product one big dataset to make different model of ML.
+### Description
 
+
+
+# Authors
+
+#### EFREI M1 - S8 - Promo 2026
+
+[Giulio Garnier](https://github.com/G1ul1o)\
+[Enzo Rivière](https://github.com/Enzo-Riviere)\
+[Marc ROUGAGNOU](https://github.com/Marc-Rougagnou)\
+
+# Utilisation
