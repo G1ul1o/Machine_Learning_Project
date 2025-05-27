@@ -1,0 +1,11 @@
+kagglehub[pandas-datasets]
+pandas
+matplotlib
+seaborn
+prophet
+scikit-learn
+lightgbm
+xgboost
+ydata-profiling
+setuptools
+tensorflow
