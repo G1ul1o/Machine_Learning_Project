@@ -5,6 +5,11 @@ import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
 from prophet import Prophet
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
+from xgboost import XGBRegressor
+import lightgbm as lgb
+from ydata_profiling import ProfileReport
 
 
 class Machine_Learning():
@@ -30,6 +35,8 @@ class Machine_Learning():
         print("Information\n")
         df_chosen.info() #print directly doesn't return anything
         print("Null values:\n", df_chosen.isnull().sum(),"\n")
+        #profile = ProfileReport(df_chosen, title="Profiling Report on the Pima Indians Diabetes dataset")
+        #profile.to_file("rapport_profiling.html")
         print("\n----------------------------------------------------------------------------------------------------------------------------------\n")
         input("Press enter to continue")
         print("\n\n\n\n\n")
@@ -65,10 +72,9 @@ class Machine_Learning():
 
     def preprocessing_data_temperature(self):
 
-        self.df_temperature = self.df_temperature.drop(columns = ["Region","Country","State","City"])
-        self.df_temperature = self.df_temperature[(self.df_temperature['Year'] >= 2013) & (self.df_temperature['Year'] <= 2020)]
-        self.df_temperature = self.df_temperature.groupby(['Year','Month','Day'])['AvgTemperature'].mean().reset_index()
-        self.df_temperature.rename(columns={'AvgTemperature': 'avg_mondial_temp'}, inplace=True)
+        self.df_temperature = self.df_temperature.drop(columns = ["Region","Country","State"])
+        self.df_temperature  = self.df_temperature [self.df_temperature ['City'] == 'Paris']
+        self.df_temperature.rename(columns={'AvgTemperature': 'avg_city_temp'}, inplace=True)
 
     def preprocessing_data_CO2(self):
         self.df_CO2_emission.drop(columns = ["Unnamed: 0","cycle"], inplace=True)
@@ -80,7 +86,8 @@ class Machine_Learning():
 
     def correlation_merge_df(self):
         
-        corr_matrix = self.df_merged.corr()
+        df_paris = self.df_merged[self.df_merged['City'] == 'Paris']
+        corr_matrix = df_paris[["concentration_in_CO2","avg_city_temp","SmoothedGSML_GIA_sigremoved"]].corr()
         plt.figure(figsize=(10, 7))
         ax = sns.heatmap(corr_matrix, annot=True) # fmt="d" specifies the annotations' format as decimal integers (d stands for decimal)
         plt.title("Matrice de corrélation")
@@ -91,15 +98,39 @@ class Machine_Learning():
 
     def predict_Prophet(self):
 
-        df_training = self.df_merged
+        df_training = self.df_merged[(self.df_merged["City"]== 'Paris')]
+        df_training= df_training[df_training["avg_city_temp"] != -99]
+        df_training["avg_city_temp"]=(df_training["avg_city_temp"]-32)*(5/9)
+
         df_training['ds'] = pad.to_datetime(df_training[['Year', 'Month', 'Day']])
-        df_training.rename(columns={'avg_mondial_temp': 'y'}, inplace=True) #need to rename it for the model
+        df_training.rename(columns={'avg_city_temp': 'y'}, inplace=True) #need to rename it for the model
         df_training = df_training[['ds', 'y']]
         
-        model = Prophet()
-        model.fit(df_training)
+        df_training = df_training.sort_values('ds')
 
-        future = model.make_future_dataframe(periods=365 * 30)
+        # Split : 80% entraînement, 20% test
+        train_size = int(len(df_training) * 0.8)
+        train_df = df_training.iloc[:train_size]
+        test_df = df_training.iloc[train_size:]
+
+        model = Prophet()
+        model.fit(train_df)
+        
+        future = test_df[['ds']]
+        forecast = model.predict(future)
+        
+        y_true = test_df['y'].values
+        y_pred = forecast['yhat'].values
+        mae = mean_absolute_error(y_true, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+        r2 = r2_score(y_true, y_pred)
+        
+        print(f"MAE : {mae:.2f}")
+        print(f"RMSE : {rmse:.2f}")
+        print(f"R² : {r2:.2f}")
+        
+
+        future = model.make_future_dataframe(periods=365*30)
         forecast = model.predict(future)
 
         print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
@@ -111,10 +142,46 @@ class Machine_Learning():
             'Incertitude haute (yhat_upper)', 
             'Observations'
         ], loc='upper left')
-        plt.title("Prévision de la température sur 30 ans")
+        plt.title("Prévision de la température sur 30 ans pour Paris")
         plt.xlabel("Date")
         plt.ylabel("Température")
         plt.show()
+
+    def predict_LGB(self):
+
+        '''df_training = self.df_merged[(self.df_merged["City"]== 'Paris')]
+        df_training = df_training.drop(columns= ["City"])
+        df_training= df_training[df_training["avg_city_temp"] != -99]
+        df_training["avg_city_temp"]=(df_training["avg_city_temp"]-32)*(5/9)'''
+        df_training = self.df_merged[['Year', 'Month', 'Day','concentration_in_CO2']]
+        df_training = df_training.sort_values(['Year', 'Month', 'Day'])
+
+        # Split : 80% entraînement, 20% test
+        train_size = int(len(df_training) * 0.8)
+        train_df = df_training.iloc[:train_size]
+        test_df = df_training.iloc[train_size:]
+
+        x_train = train_df.drop(["concentration_in_CO2"],axis=1).to_numpy()
+        y_train = train_df["concentration_in_CO2"].to_numpy()
+
+        x_test = test_df.drop(["concentration_in_CO2"],axis=1).to_numpy()
+        y_test = test_df["concentration_in_CO2"].to_numpy()
+
+        params = {
+            'num_leaves': 55,
+            'learning_rate': 0.4
+        }
+
+        model = lgb.LGBMRegressor(**params)
+        model.fit(x_train,y_train)
+
+        y_pred = model.predict(x_test)
+
+        mae = mean_absolute_error(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        print(f"MAE: {mae}")
+        print(f"RMSE: {rmse}")
+
 
 def Machine_Learning_main():
     Machine_Learning_class=Machine_Learning()
@@ -131,13 +198,7 @@ def Machine_Learning_main():
     Machine_Learning_class.EDA("merge")
     Machine_Learning_class.correlation_merge_df()
     Machine_Learning_class.predict_Prophet()
-
-
-    
-
-
-
-
+    Machine_Learning_class.predict_LGB()
 
 
 
@@ -145,7 +206,5 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description="Option for the Machine_Learning analysis")
-    #parser.add_argument("--bucket_staging", type=str, required=True, help="Name of the staging S3 bucket")
     args = parser.parse_args()
-
-    Machine_Learning_main() #args.bucket_staging
+    Machine_Learning_main()
